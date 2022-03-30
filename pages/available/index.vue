@@ -1,5 +1,6 @@
 <template>
 	<view class='bar-bg'>
+		<u-toast ref="uToast" />
 		<view class="bg-border">
 			<scroll-view scroll-y="true" class="scroll" v-if="!loading">
 				<view v-if="orders.length>0" class="items">
@@ -51,9 +52,19 @@
 					},
 					success: (res) => {
 						console.log('请求接受订单成功', res.data)
+						that.$refs.uToast.show({
+							title: '接受成功',
+							type: 'success',
+							position: 'top',
+						})
 					},
 					fail: (e) => {
 						console.log('请求接受订单失败', e)
+						that.$refs.uToast.show({
+							title: '接受失败',
+							type: 'warning',
+							position: 'top',
+						})
 					},
 					complete: () => {
 						uni.request({
@@ -64,6 +75,7 @@
 								if (res.data.state) {
 									that.orders = res.data.data
 									console.log(that.orders.length)
+
 								} else {
 									that.orders = []
 								}
@@ -86,7 +98,7 @@
 				url: baseUrl + 'order/getAcceptableOrders',
 				method: 'POST',
 				success: (res) => {
-					console.log("请求可接受订单成功", res.data)
+					console.log("请求可接受的订单列表成功", res.data)
 					if (res.data.state) {
 						that.orders = res.data.data
 						console.log(that.orders.length)
@@ -95,7 +107,12 @@
 					}
 				},
 				fail: (e) => {
-					console.log("请求可接受订单失败", e)
+					console.log("请求可接受的订单列表失败", e)
+					that.$refs.uToast.show({
+						title: '请求失败，请返回首页再回来',
+						type: 'warning',
+						position: 'top',
+					})
 				},
 				complete: () => {
 					that.loading = false;

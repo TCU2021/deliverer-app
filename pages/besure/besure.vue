@@ -34,8 +34,10 @@
 				url: baseUrl + 'order/delivererGetCabinetOrder',
 				method: 'POST',
 				data: { 
-					telephone: option.telephone,
-					location: option.location,
+					// telephone: option.telephone,
+					// location: option.location,
+					telephone:'123456789',
+					location:'位置1'
 				},
 				success: (res) => {
 					console.log('订单送到请求成功', res.data)

@@ -57,9 +57,11 @@
 		}, {
 			"pagePath": "pages/available/index",
 			"text": "可领取"
-		}, {
-			"pagePath": "pages/myInfo/myInfo",
-			"text": "我的"
-		}]
+		}
+		// , {
+		// 	"pagePath": "pages/myInfo/myInfo",
+		// 	"text": "我的"
+		// },
+		]
 	}
 }
