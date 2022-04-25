@@ -1,12 +1,18 @@
 <template>
-	<view class="bar-bg">
+	<view class="bar-bg" v-if="isLoad.window">
 		<u-toast ref="uToast" />
-		<view class="hello">
-			<view class="title">欢迎你：{{ user.username }}</view>
-			<view class="title">进行中的订单：</view>
+		<view class="header">
+			<view class="hello">
+				<view class="title">欢迎你：{{ user.username }}</view>
+				<view class="title">全部订单：</view>
+			</view>
+			<view class="buttons">
+				<u-button @click="logout">退出登录</u-button>
+			</view>
 		</view>
 		<view class="todo bg-border">
-			<view class="content" v-if="!ordersLoading&&orders.length>0">
+			<u-loading mode="circle" color="#0184ff" v-if="ordersLoading"></u-loading>
+			<view class="content" v-else-if="orders.length>0">
 				<swiper class="swiper" @change="changeCurrentPage">
 					<swiper-item class="swiperItem" v-for="(item,index) in orders">
 						<view class="text">
@@ -21,9 +27,8 @@
 					{{currentPage+1}}/{{orders.length}}
 				</view>
 			</view>
-			<u-loading mode="circle" color="#0184ff" v-else-if="orders.length>0"></u-loading>
 			<view class="title" v-else>
-				您暂无进行中的订单
+				您暂无的订单
 			</view>
 		</view>
 		<view class="qrBg" @click="toScan">
@@ -44,23 +49,14 @@
 	} from '../../js/base.js'
 	export default {
 		data() {
-			let user = undefined
-			user = uni.getStorageSync('user')
-			if (user === undefined) {
-				uni.redirectTo({
-					url: '/pages/Login/Index',
-					success: (res) => {
-						console.log('首页接受数据失败返回登录界面成功', res)
-					},
-					fail(res) {
-						console.log('首页接受数据失败返回登录界面失败', res)
-					}
-				})
-			}
+			let user = {}
 			let orders = [{
 				id: 0,
 				state: 0
 			}]
+			let isLoad = {
+				window: false
+			}
 			return {
 				currentPage: 0,
 				result: '',
@@ -68,6 +64,7 @@
 				user,
 				orders,
 				stateList,
+				isLoad,
 				ordersLoading: true
 			}
 		},
@@ -94,35 +91,66 @@
 					title: '您暂时没有相关订单',
 					type: 'warning',
 				})
+			},
+			logout() {
+				uni.clearStorageSync()
+				uni.reLaunch({
+					url: '../Login/Index'
+				})
 			}
 		},
 		onShow() {
-			this.ordersLoading = true;
-			let that = this
-			this.orders = []
-			uni.request({
-				url: baseUrl + 'order/getDelivererOrder',
-				method: "POST",
-				data: {
-					telephone: that.user.telephone
-				},
-				success: (res) => {
-					that.ordersLoading = false;
-					console.log('订单获取成功', res)
-					for (let i = 0; i < res.data.length; i++) {
-						if (res.data[i].state === 1) {
-							that.orders.push(res.data[i])
-						}
+			this.user = uni.getStorageSync('user')
+			if (this.user === '') {
+				uni.redirectTo({
+					url: '/pages/Login/Index',
+					success: (res) => {
+						console.log('首页接受数据失败返回登录界面成功', res)
+					},
+					fail(res) {
+						console.log('首页接受数据失败返回登录界面失败', res)
 					}
-					uni.setStorage({
-						key: 'order',
-						data: res.data,
-						success: function() {
-							console.log('订单信息存储成功');
+				})
+			} else {
+				this.isLoad.window = true
+				this.ordersLoading = true;
+				let that = this
+				this.orders = []
+				uni.request({
+					url: baseUrl + 'order/getDelivererOrder',
+					method: "POST",
+					data: {
+						telephone: that.user.telephone
+					},
+					success: (res) => {
+						that.ordersLoading = false;
+						console.log('订单获取成功', res)
+						for (let i = 0; i < res.data.length - 1; i++) {
+							for (let j = 0; j < res.data.length - 1 - i; j++) {
+								if (res.data[j].state > res.data[j + 1].state) {
+									let t = res.data[j + 1]
+									res.data[j + 1] = res.data[j]
+									res.data[j] = t
+								}
+							}
 						}
-					});
-				}
-			})
+						// for (let i = 0; i < res.data.length; i++) {
+						// 	if (res.data[i].state === 1 || res.data[i].state === 2) {
+						// 		that.orders.push(res.data[i])
+						// 	}
+						// }
+						that.orders = res.data
+						console.log(that.orders)
+						uni.setStorage({
+							key: 'order',
+							data: res.data,
+							success: function() {
+								console.log('订单信息存储成功');
+							}
+						});
+					}
+				})
+			}
 			// uni.getStorage({
 			// 	key: 'orders',
 			// 	success(res) {
@@ -151,9 +179,21 @@
 		padding: 40rpx 40rpx 0 40rpx
 	}
 
-	.hello {
+	.header {
 		height: 170rpx;
-		padding: 30rpx 40rpx
+		display: flex;
+		align-items: center;
+
+		.hello {
+			height: 170rpx;
+			padding: 30rpx 40rpx
+		}
+
+		.buttons {
+			margin-left: auto;
+			width: 200rpx;
+			margin-right: 50rpx;
+		}
 	}
 
 	.todo {
